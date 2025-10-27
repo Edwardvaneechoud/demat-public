@@ -124,14 +124,13 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.addEventListener('click', e => (e.preventDefault(), logout()));
     });
 
-    // Connect login/logout by ID (your original method)
-    const loginBtn = document.getElementById('login-button');
+    const loginBtn = document.getElementById('btn-login');  // Changed from 'login-button'
     if (loginBtn) loginBtn.addEventListener('click', e => (e.preventDefault(), login()));
-    
-    const logoutBtn = document.getElementById('logout-button');
-    if (logoutBtn) logoutBtn.addEventListener('click', e => (e.preventDefault(), logout()));
 
-    // Connect API test button (if you have one with this ID)
+    const logoutBtn = document.getElementById('btn-logout');  // Changed from 'logout-button'
+    if (logoutBtn) logoutBtn.addEventListener('click', e => (e.preventDefault(), logout()));
+    
+
     const apiBtn = document.getElementById('btn-call-api');
     if (apiBtn) apiBtn.addEventListener('click', e => (e.preventDefault(), callApi()));
 
