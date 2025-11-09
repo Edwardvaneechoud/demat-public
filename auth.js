@@ -8,12 +8,12 @@ document.addEventListener('DOMContentLoaded', function() {
     useRefreshTokens: true
   };
   const API_URL = "https://api.dematerialized.nl";
-  let auth0Client = null;
+  window.auth0Client = null;
 
   async function initializeAuth0() {
     try {
       console.log('Starting Auth0 initialization...');
-      auth0Client = await auth0.createAuth0Client({
+      window.auth0Client = await auth0.createAuth0Client({
         domain: auth0Config.domain,
         clientId: auth0Config.clientId,
         
@@ -31,17 +31,17 @@ document.addEventListener('DOMContentLoaded', function() {
       // Handle redirect
       const query = window.location.search;
       if (query.includes("code=") && query.includes("state=")) {
-        await auth0Client.handleRedirectCallback();
+        await window.auth0Client.handleRedirectCallback();
         window.history.replaceState({}, document.title, window.location.pathname.split('?')[0]);
       }
       
       // Update UI
-      const isAuthenticated = await auth0Client.isAuthenticated();
+      const isAuthenticated = await window.auth0Client.isAuthenticated();
       console.log('Authentication status:', isAuthenticated);
       updateUI(isAuthenticated);
       
       if (isAuthenticated) {
-        const user = await auth0Client.getUser();
+        const user = await window.auth0Client.getUser();
         console.log('User details:', user);
         displayUserInfo(user);
       }
@@ -80,14 +80,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Login
   async function login() {
-    if (!auth0Client) return;
-    await auth0Client.loginWithRedirect();
+    if (!window.auth0Client) return;
+    await window.auth0Client.loginWithRedirect();
   }
 
   // Logout
   async function logout() {
-    if (!auth0Client) return;
-    await auth0Client.logout({
+    if (!window.auth0Client) return;
+    await window.auth0Client.logout({
       logoutParams: {
         returnTo: 'https://dematerialized-24fc59.webflow.io/' // Fixed redirect
       }
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function callApi() {
     console.log("Attempting to call API...");
     try {
-      const token = await auth0Client.getTokenSilently();
+      const token = await window.auth0Client.getTokenSilently();
       const response = await fetch(`${API_URL}/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -139,15 +139,15 @@ document.addEventListener('DOMContentLoaded', function() {
   // Your debug helper
   window.debugAuth = async function() { 
     console.log('=== Auth Debug Info ===');
-    console.log('Auth0 Client exists:', !!auth0Client);
-    if (auth0Client) {
-      const isAuth = await auth0Client.isAuthenticated();
+    console.log('Auth0 Client exists:', !!window.auth0Client);
+    if (window.auth0Client) {
+      const isAuth = await window.auth0Client.isAuthenticated();
       console.log('Is authenticated:', isAuth);
       if (isAuth) {
-        const user = await auth0Client.getUser();
+        const user = await window.auth0Client.getUser();
         console.log('User:', user);
         try {
-          const token = await auth0Client.getTokenSilently();
+          const token = await window.auth0Client.getTokenSilently();
           console.log('Access Token:', token.substring(0, 20) + "...");
         } catch(e) {
           console.error("Could not get token", e);
