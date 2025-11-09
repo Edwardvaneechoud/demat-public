@@ -68,6 +68,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Check user status and show onboarding modal if needed
   async function checkUserStatus() {
     try {
+      // Don't show onboarding modal if we're already on the onboarding page!
+      if (window.location.pathname === '/onboarding') {
+        console.log('⏭️ On onboarding page, skipping modal check');
+        return;
+      }
+      
       console.log('🔍 Checking user status...');
       const token = await window.auth0Client.getTokenSilently();
       const response = await fetch(`${API_URL}/users/me`, {
