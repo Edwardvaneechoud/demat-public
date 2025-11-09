@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clientId: auth0Config.clientId,
         
         authorizationParams: {
-          redirect_uri: 'https://dematerialized-24fc59.webflow.io/',
+          redirect_uri: window.location.origin + '/',
           audience: 'https://api.dematerialized.nl/'
         },
 
@@ -31,8 +31,12 @@ document.addEventListener('DOMContentLoaded', function() {
       // Handle redirect
       const query = window.location.search;
       if (query.includes("code=") && query.includes("state=")) {
+        console.log('📨 Handling Auth0 redirect callback...');
         await window.auth0Client.handleRedirectCallback();
-        window.history.replaceState({}, document.title, window.location.pathname.split('?')[0]);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // After successful login, check user status
+        await checkUserStatusAndRedirect();
       }
       
       // Update UI
@@ -44,9 +48,84 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = await window.auth0Client.getUser();
         console.log('User details:', user);
         displayUserInfo(user);
+        
+        // Check user status on page load if already authenticated
+        await checkUserStatus();
       }
     } catch (error) {
       console.error('Auth0 initialization error:', error);
+    }
+  }
+
+  // Check user status and show onboarding modal if needed
+  async function checkUserStatus() {
+    try {
+      console.log('🔍 Checking user status...');
+      const token = await window.auth0Client.getTokenSilently();
+      const response = await fetch(`${API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch user status:', response.status);
+        return;
+      }
+      
+      const userData = await response.json();
+      console.log('User data:', userData);
+      
+      // Check if user needs to complete their profile
+      if (!userData.provided_information) {
+        console.log('⚠️ User has not completed their profile');
+        showOnboardingModal();
+      }
+      
+      // Store user data globally for easy access
+      window.currentUserData = userData;
+      
+    } catch (error) {
+      console.error('Error checking user status:', error);
+    }
+  }
+
+  // Check user status and redirect to onboarding if needed (after login)
+  async function checkUserStatusAndRedirect() {
+    try {
+      console.log('🔍 Checking user status after login...');
+      const token = await window.auth0Client.getTokenSilently();
+      const response = await fetch(`${API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch user status:', response.status);
+        return;
+      }
+      
+      const userData = await response.json();
+      console.log('User data after login:', userData);
+      
+      // Check if user needs to complete their profile
+      if (!userData.provided_information) {
+        console.log('🚀 Redirecting to onboarding page...');
+        // Redirect to onboarding page
+        window.location.href = '/onboarding'; // Change this to your actual onboarding page URL
+      } else {
+        console.log('✅ User profile is complete');
+      }
+      
+      // Store user data globally
+      window.currentUserData = userData;
+      
+    } catch (error) {
+      console.error('Error checking user status:', error);
+    }
+  }
+
+  // Show onboarding modal (for when user is already logged in but hasn't completed profile)
+  function showOnboardingModal() {
+    if (typeof window.openOnboardingModal === 'function') {
+      window.openOnboardingModal();
     }
   }
 
@@ -89,12 +168,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!window.auth0Client) return;
     await window.auth0Client.logout({
       logoutParams: {
-        returnTo: 'https://dematerialized-24fc59.webflow.io/' // Fixed redirect
+        returnTo: window.location.origin + '/'
       }
     });
   }
 
-  // --- API Calling Function (This was missing from your version) ---
+  // API Calling Function
   async function callApi() {
     console.log("Attempting to call API...");
     try {
@@ -112,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // --- Initialize and connect buttons ---
+  // Initialize and connect buttons
   initializeAuth0();
   
   setTimeout(() => {
@@ -124,19 +203,18 @@ document.addEventListener('DOMContentLoaded', function() {
       btn.addEventListener('click', e => (e.preventDefault(), logout()));
     });
 
-    const loginBtn = document.getElementById('btn-login');  // Changed from 'login-button'
+    const loginBtn = document.getElementById('btn-login');
     if (loginBtn) loginBtn.addEventListener('click', e => (e.preventDefault(), login()));
 
-    const logoutBtn = document.getElementById('btn-logout');  // Changed from 'logout-button'
+    const logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) logoutBtn.addEventListener('click', e => (e.preventDefault(), logout()));
-    
 
     const apiBtn = document.getElementById('btn-call-api');
     if (apiBtn) apiBtn.addEventListener('click', e => (e.preventDefault(), callApi()));
 
   }, 100);
   
-  // Your debug helper
+  // Debug helper
   window.debugAuth = async function() { 
     console.log('=== Auth Debug Info ===');
     console.log('Auth0 Client exists:', !!window.auth0Client);
@@ -146,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (isAuth) {
         const user = await window.auth0Client.getUser();
         console.log('User:', user);
+        console.log('User Data from API:', window.currentUserData);
         try {
           const token = await window.auth0Client.getTokenSilently();
           console.log('Access Token:', token.substring(0, 20) + "...");
@@ -155,5 +234,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   };
+  
+  // Expose check function globally
+  window.checkUserStatus = checkUserStatus;
+  
   console.log('Auth0 script loaded. Type debugAuth() in console for debug info.');
 });
