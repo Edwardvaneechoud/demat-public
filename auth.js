@@ -33,7 +33,15 @@ document.addEventListener('DOMContentLoaded', function() {
       if (query.includes("code=") && query.includes("state=")) {
         console.log('📨 Handling Auth0 redirect callback...');
         await window.auth0Client.handleRedirectCallback();
-        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Get the return path that was stored before login
+        const returnPath = sessionStorage.getItem('auth_return_path') || '/';
+        sessionStorage.removeItem('auth_return_path');
+        
+        console.log('🔙 Returning to:', returnPath);
+        
+        // Clean up URL and redirect to return path
+        window.history.replaceState({}, document.title, returnPath);
         
         // After successful login, check user status
         await checkUserStatusAndRedirect();
@@ -109,9 +117,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!userData.provided_information) {
         console.log('🚀 Redirecting to onboarding page...');
         // Redirect to onboarding page
-        window.location.href = '/onboarding'; // Change this to your actual onboarding page URL
+        window.location.href = '/onboarding';
       } else {
         console.log('✅ User profile is complete');
+        // User stays on current page (which is the return path)
       }
       
       // Store user data globally
@@ -157,9 +166,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Login
+  // Login - Store current path before redirecting
   async function login() {
     if (!window.auth0Client) return;
+    
+    // Store current path so we can return here after login
+    sessionStorage.setItem('auth_return_path', window.location.pathname);
+    console.log('💾 Stored return path:', window.location.pathname);
+    
     await window.auth0Client.loginWithRedirect();
   }
 
@@ -233,6 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     }
+    console.log('Stored return path:', sessionStorage.getItem('auth_return_path'));
   };
   
   // Expose check function globally
