@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-  
+
   // --- Auth0 Configuration ---
   const auth0Config = {
     domain: 'dev-rgs24jdzcvdydd77.eu.auth0.com',
