@@ -149,13 +149,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const loggedInElements = document.querySelectorAll('[data-auth="logged-in"]');
     const loggedOutElements = document.querySelectorAll('[data-auth="logged-out"]');
     
-    loggedInElements.forEach(el => {
-      el.style.display = isAuthenticated ? '' : 'none';
-    });
-    
-    loggedOutElements.forEach(el => {
-      el.style.display = !isAuthenticated ? '' : 'none';
-    });
+     loggedInElements.forEach(el => {
+    el.style.display = isAuthenticated ? 'block' : 'none';
+  });
+  
+  loggedOutElements.forEach(el => {
+    el.style.display = !isAuthenticated ? 'block' : 'none';
+  });
   }
 
   // Display user info
